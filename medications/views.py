@@ -10,7 +10,8 @@ class MedicationViewSet(viewsets.ModelViewSet):
     serializer_class = MedicationSerializer
 
     def create(self, request, *args ,**kwargs):
-        medication_name = request.data.get('name')  # Use request.data para obter o corpo da solicitação POST
+        medication_name = request.data.get('name')
+
         if not medication_name:
             return Response({"error": "O campo 'name' é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
         
