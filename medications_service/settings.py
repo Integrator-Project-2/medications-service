@@ -77,8 +77,12 @@ WSGI_APPLICATION = 'medications_service.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'medications_service',
+        'USER': 'postgres',
+        'PASSWORD': '1248',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
