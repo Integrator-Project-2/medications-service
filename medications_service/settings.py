@@ -10,6 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
+from dotenv import load_dotenv
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -75,14 +77,16 @@ WSGI_APPLICATION = 'medications_service.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+load_dotenv()
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'medications_service',
-        'USER': 'postgres',
-        'PASSWORD': '1248',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('NAME'),
+        'USER':  os.getenv('USER'),
+        'PASSWORD': os.getenv('PASSWORD'),
+        'HOST':  os.getenv('HOST'),
+        'PORT': os.getenv('PORT'),
     }
 }
 
