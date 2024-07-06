@@ -5,8 +5,6 @@ from .serializers import MedicationReminderSerializer
 import datetime
 from django.utils import timezone
 
-
-
 class MedicationReminderViewSet(viewsets.ModelViewSet):
     queryset = MedicationReminder.objects.all()
     serializer_class = MedicationReminderSerializer
@@ -14,11 +12,9 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
     
         validated_data = serializer.validated_data
 
-        # Criando um lembrete "provisório" para chamar o método post
         reminder = MedicationReminder(
             medication=validated_data['medication'],
             patient=validated_data.get('patient'),
@@ -29,7 +25,6 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
             day=validated_data.get('day', timezone.now().date())
         )
 
-       
         reminders = reminder.post()
 
         reminders_serializer = self.get_serializer(reminders, many=True)

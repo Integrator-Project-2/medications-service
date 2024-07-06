@@ -1,0 +1,27 @@
+name: Create Daily Reminders
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Executa todos os dias à meia-noite UTC
+
+jobs:
+  create_reminders:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ' 3.11.5'  # Substitua pela versão específica do Python
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # Instale as dependências do projeto
+
+      - name: Run create_daily_reminders.py
+        run: |
+          python create_daily_reminders.py  # Execute seu script Python

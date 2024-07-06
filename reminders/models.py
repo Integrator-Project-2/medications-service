@@ -13,7 +13,7 @@ class MedicationReminder(models.Model):
     patient = models.IntegerField(null=True, blank=True)
     reminder_type = models.CharField(max_length=20, choices=REMINDER_TYPE)
     frequency_per_day = models.IntegerField(default=1)
-    frequency_hours = models.IntegerField(default=1, null=True, blank=True)
+    frequency_hours = models.IntegerField(default=0, null=True, blank=True)
     remind_time = models.TimeField()
     day = models.DateField(auto_now_add=True)
     medication_taken = models.BooleanField(default=False)
