@@ -2,7 +2,6 @@ import datetime
 from django.db import models
 from medications.models import Medication
 
-
 class MedicationReminder(models.Model):
     REMINDER_TYPE = [
         ('daily reminder', 'Daily Reminder'),
@@ -15,13 +14,13 @@ class MedicationReminder(models.Model):
     frequency_per_day = models.IntegerField(default=1)
     frequency_hours = models.IntegerField(default=0, null=True, blank=True)
     remind_time = models.TimeField()
-    day = models.DateField(auto_now_add=True)
+    day = models.DateField()
     medication_taken = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.medication} - {self.reminder_type} on {self.day} at {self.remind_time}"
 
-    def post(self):
+    def create_reminders(self):
         reminders = []
 
         if self.reminder_type == 'unique reminder' or self.frequency_per_day == 1:

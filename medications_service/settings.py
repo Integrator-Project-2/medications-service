@@ -13,12 +13,21 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from dotenv import load_dotenv # type: ignore
 from pathlib import Path
+from celery.schedules import crontab
 
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+CELERY_BEAT_SCHEDULE = {
+    'create-daily-reminders': {
+        'task': 'medications.tasks.create_daily_reminders',
+        'schedule': crontab(hour=0, minute=0),
+    },
+
+}
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/

@@ -2,7 +2,6 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from .models import MedicationReminder
 from .serializers import MedicationReminderSerializer
-import datetime
 from django.utils import timezone
 
 class MedicationReminderViewSet(viewsets.ModelViewSet):
@@ -25,7 +24,7 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
             day=validated_data.get('day', timezone.now().date())
         )
 
-        reminders = reminder.post()
+        reminders = reminder.create_reminders()
 
         reminders_serializer = self.get_serializer(reminders, many=True)
 
