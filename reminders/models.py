@@ -1,13 +1,13 @@
-import datetime
 from django.db import models
 from medications.models import Medication
+from django.core.exceptions import ValidationError
+from datetime import datetime, timedelta
 
 class MedicationReminder(models.Model):
     REMINDER_TYPE = [
         ('daily reminder', 'Daily Reminder'),
         ('unique reminder', 'Unique Reminder'),
     ]
-    
     medication = models.ForeignKey(Medication, on_delete=models.DO_NOTHING)
     patient = models.IntegerField(null=True, blank=True)
     reminder_type = models.CharField(max_length=20, choices=REMINDER_TYPE)
@@ -22,8 +22,8 @@ class MedicationReminder(models.Model):
 
     def create_reminders(self):
         reminders = []
-
-        if self.reminder_type == 'unique reminder' or self.frequency_per_day == 1:
+        
+        if self.reminder_type == 'unique reminder':
             reminder = MedicationReminder.objects.create(
                 medication=self.medication,
                 patient=self.patient,
@@ -32,12 +32,12 @@ class MedicationReminder(models.Model):
                 day=self.day
             )
             reminders.append(reminder)
-
         elif self.reminder_type == 'daily reminder':
-            start_datetime = datetime.datetime.combine(self.day, self.remind_time)
+
+            start_datetime = datetime.combine(self.day, self.remind_time)
             
             for i in range(self.frequency_per_day):
-                remind_datetime = start_datetime + datetime.timedelta(hours=i * self.frequency_hours)
+                remind_datetime = start_datetime + timedelta(hours=i * self.frequency_hours)
                 reminder = MedicationReminder.objects.create(
                     medication=self.medication,
                     patient=self.patient,
@@ -46,5 +46,21 @@ class MedicationReminder(models.Model):
                     day=self.day
                 )
                 reminders.append(reminder)
-
+    
         return reminders
+
+
+class AmountReminder(models.Model):
+    medication = models.ForeignKey(Medication, on_delete=models.DO_NOTHING)
+    amount = models.IntegerField()
+    reminder_quantity = models.IntegerField()
+
+    def clean(self):
+        if self.amount <= 0:
+            raise ValidationError({'amount': 'Medication amount must be greater than zero.'})
+        if self.reminder_quantity < 0:
+            raise ValidationError({'reminder_quantity': 'Medication reminder quantity must be greater than or equal to zero.'})
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
