@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from .models import MedicationReminder
-from .serializers import MedicationReminderSerializer
+from .models import AmountReminder, MedicationReminder
+from .serializers import AmountReminderSerializer, MedicationReminderSerializer
 from django.utils import timezone
 
 class MedicationReminderViewSet(viewsets.ModelViewSet):
@@ -25,7 +25,11 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
         )
 
         reminders = reminder.create_reminders()
-
+      
         reminders_serializer = self.get_serializer(reminders, many=True)
-
+        
         return Response(reminders_serializer.data, status=status.HTTP_201_CREATED)
+
+class AmountReminderViewSet(viewsets.ModelViewSet):
+    queryset = AmountReminder.objects.all()
+    serializer_class = AmountReminderSerializer

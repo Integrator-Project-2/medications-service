@@ -8,6 +8,7 @@ class Medication(models.Model):
         ('capsule', 'Capsule'),
         ('solution', 'Solution'),
         ('liquid', 'Liquid'),
+        ('drops', 'Drops'),
         ('injectable', 'Injectable'),
     ]
     name = models.CharField(max_length=250, verbose_name='Medication name')
