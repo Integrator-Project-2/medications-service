@@ -23,7 +23,7 @@ class MedicationReminder(models.Model):
     def create_reminders(self):
         reminders = []
         
-        if self.reminder_type == 'unique reminder':
+        if self.reminder_type == 'unique reminder' or self.frequency_per_day == 1:
             reminder = MedicationReminder.objects.create(
                 medication=self.medication,
                 patient=self.patient,
