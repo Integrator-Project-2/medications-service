@@ -33,3 +33,27 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
 class AmountReminderViewSet(viewsets.ModelViewSet):
     queryset = AmountReminder.objects.all()
     serializer_class = AmountReminderSerializer
+
+class TakeMedicationViewSet(viewsets.ViewSet):
+    
+    def update(self, request, pk=None):
+        try:
+            medication_reminder = MedicationReminder.objects.get(pk=pk)
+        except MedicationReminder.DoesNotExist:
+            return Response({'error': 'Medication Reminder not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if medication_reminder.medication_taken:
+            return Response({'message': 'Medication already marked as taken.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        medication_reminder.medication_taken = True
+        medication_reminder.save()
+        
+        try:
+            amount_reminder = AmountReminder.objects.get(medication=medication_reminder.medication)
+        except AmountReminder.DoesNotExist:
+            return Response({'error': 'Amount Reminder not found for this medication.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        amount_reminder.amount -= 1
+        amount_reminder.save()
+        
+        return Response({'message': 'Medication marked as taken and amount decremented successfully.'}, status=status.HTTP_200_OK)

@@ -51,7 +51,7 @@ class MedicationReminder(models.Model):
 
 
 class AmountReminder(models.Model):
-    medication = models.ForeignKey(Medication, on_delete=models.DO_NOTHING)
+    medication = models.OneToOneField(Medication, on_delete=models.DO_NOTHING)
     amount = models.IntegerField()
     reminder_quantity = models.IntegerField()
 
