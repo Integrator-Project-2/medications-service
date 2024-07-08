@@ -3,6 +3,9 @@ from rest_framework.response import Response
 from .models import AmountReminder, MedicationReminder
 from .serializers import AmountReminderSerializer, MedicationReminderSerializer
 from django.utils import timezone
+from rest_framework.decorators import action
+from datetime import timedelta
+from django.utils.timezone import localtime
 
 class MedicationReminderViewSet(viewsets.ModelViewSet):
     queryset = MedicationReminder.objects.all()
@@ -29,6 +32,27 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
         reminders_serializer = self.get_serializer(reminders, many=True)
         
         return Response(reminders_serializer.data, status=status.HTTP_201_CREATED)
+    
+
+    @action(detail=False, methods=['get'])
+    def due_reminders(self, request):
+        patient_id = request.query_params.get('patient_id')
+        if not patient_id:
+            return Response({'error': 'Patient ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        now = localtime(timezone.now())
+
+        reminders = MedicationReminder.objects.filter(
+            patient=patient_id,
+            day=now.date(),
+            remind_time__gte=now.time(),
+            medication_taken=False
+        )
+        print(now)
+        print(reminders)
+
+        serializer = self.get_serializer(reminders, many=True)
+        return Response(serializer.data)
 
 class AmountReminderViewSet(viewsets.ModelViewSet):
     queryset = AmountReminder.objects.all()
