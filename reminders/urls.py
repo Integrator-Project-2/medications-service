@@ -8,7 +8,7 @@ router.register(r'amount-reminder', views.AmountReminderViewSet)
 
 
 urlpatterns = [
-    path('take-medication/<int:pk>/', views.TakeMedicationViewSet.as_view({'put': 'update'}), name='take-medication'),
+    path('take_medication/<int:pk>/', views.TakeMedicationViewSet.as_view({'put': 'update'}), name='take_medication'),
 ]
 
 urlpatterns += router.urls
