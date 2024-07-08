@@ -41,16 +41,18 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Patient ID is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         now = localtime(timezone.now())
+        time_range_end = now + timedelta(hours=6)
 
         reminders = MedicationReminder.objects.filter(
             patient=patient_id,
             day=now.date(),
             remind_time__gte=now.time(),
+            remind_time__lte= time_range_end.time(),
             medication_taken=False
         )
-        print(now)
-        print(reminders)
-
+        
+        # print(now.time())
+        # print(time_range_end.time())
         serializer = self.get_serializer(reminders, many=True)
         return Response(serializer.data)
 
