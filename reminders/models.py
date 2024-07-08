@@ -8,13 +8,13 @@ class MedicationReminder(models.Model):
         ('daily reminder', 'Daily Reminder'),
         ('unique reminder', 'Unique Reminder'),
     ]
-    medication = models.ForeignKey(Medication, on_delete=models.DO_NOTHING)
+    medication = models.ForeignKey(Medication, on_delete=models.DO_NOTHING, blank=True)
     patient = models.IntegerField(null=True, blank=True)
-    reminder_type = models.CharField(max_length=20, choices=REMINDER_TYPE)
-    frequency_per_day = models.IntegerField(default=1)
+    reminder_type = models.CharField(max_length=20, choices=REMINDER_TYPE, blank=True)
+    frequency_per_day = models.IntegerField(default=1, blank=True)
     frequency_hours = models.IntegerField(default=0, null=True, blank=True)
-    remind_time = models.TimeField()
-    day = models.DateField()
+    remind_time = models.TimeField(blank=True)
+    day = models.DateField(blank=True)
     medication_taken = models.BooleanField(default=False)
 
     def __str__(self):
@@ -51,9 +51,10 @@ class MedicationReminder(models.Model):
 
 
 class AmountReminder(models.Model):
-    medication = models.OneToOneField(Medication, on_delete=models.DO_NOTHING)
-    amount = models.IntegerField()
-    reminder_quantity = models.IntegerField()
+    medication = models.OneToOneField(Medication, on_delete=models.DO_NOTHING, blank=True)
+    amount = models.IntegerField(blank=True)
+    reminder_quantity = models.IntegerField(default=5, blank=True)
+    low_stock = models.BooleanField(default=False, blank=True)
 
     def clean(self):
         if self.medication.pharmaceutical_form not in ['tablet', 'capsule', 'injectable']:
@@ -64,5 +65,10 @@ class AmountReminder(models.Model):
             raise ValidationError({'reminder_quantity': 'Medication reminder quantity must be greater than or equal to zero.'})
 
     def save(self, *args, **kwargs):
+        if self.amount <= self.reminder_quantity:
+            self.low_stock = True
+        else:
+            self.low_stock = False
+        
         self.clean()
         super().save(*args, **kwargs)

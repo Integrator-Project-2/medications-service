@@ -50,7 +50,7 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
             remind_time__lte= time_range_end.time(),
             medication_taken=False
         )
-        
+
         # print(now.time())
         # print(time_range_end.time())
         serializer = self.get_serializer(reminders, many=True)
@@ -81,5 +81,8 @@ class TakeMedicationViewSet(viewsets.ViewSet):
         
         amount_reminder.amount -= 1
         amount_reminder.save()
+
+        low_stock = amount_reminder.low_stock
         
-        return Response({'message': 'Medication marked as taken and amount decremented successfully.'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Medication marked as taken and amount decremented successfully.', 'low_stock': low_stock}, status=status.HTTP_200_OK)
+        
