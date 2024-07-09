@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from .models import AmountReminder, MedicationReminder
 from .serializers import AmountReminderSerializer, MedicationReminderSerializer
@@ -7,9 +7,13 @@ from rest_framework.decorators import action
 from datetime import timedelta
 from django.utils.timezone import localtime
 
+class CustomRemindersPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
 class MedicationReminderViewSet(viewsets.ModelViewSet):
     queryset = MedicationReminder.objects.all()
     serializer_class = MedicationReminderSerializer
+    permission_classes = [CustomRemindersPermission]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -51,16 +55,18 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
             medication_taken=False
         )
 
-        # print(now.time())
-        # print(time_range_end.time())
+
         serializer = self.get_serializer(reminders, many=True)
         return Response(serializer.data)
 
 class AmountReminderViewSet(viewsets.ModelViewSet):
     queryset = AmountReminder.objects.all()
     serializer_class = AmountReminderSerializer
+    permission_classes = [CustomRemindersPermission]
 
 class TakeMedicationViewSet(viewsets.ViewSet):
+    
+    permission_classes = [CustomRemindersPermission]
     
     def update(self, request, pk=None):
         try:
