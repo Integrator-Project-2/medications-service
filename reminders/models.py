@@ -11,10 +11,10 @@ class MedicationReminder(models.Model):
     medication = models.ForeignKey(Medication, on_delete=models.DO_NOTHING, blank=True)
     patient = models.IntegerField(null=True, blank=True)
     reminder_type = models.CharField(max_length=20, choices=REMINDER_TYPE, blank=True)
-    frequency_per_day = models.IntegerField(default=1, blank=True)
+    frequency_per_day = models.IntegerField(default=1, blank=True, null=True)
     frequency_hours = models.IntegerField(default=0, null=True, blank=True)
     remind_time = models.TimeField(blank=True)
-    day = models.DateField(blank=True)
+    day = models.DateField(blank=True, auto_now=True)
     medication_taken = models.BooleanField(default=False)
 
     def __str__(self):

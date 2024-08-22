@@ -7,66 +7,32 @@ from rest_framework.decorators import action
 from datetime import timedelta
 from django.utils.timezone import localtime
 
-class CustomRemindersPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
+# class CustomRemindersPermission(permissions.BasePermission):
+#     def has_permission(self, request, view):
+#         return request.user and request.user.is_authenticated
 class MedicationReminderViewSet(viewsets.ModelViewSet):
     queryset = MedicationReminder.objects.all()
     serializer_class = MedicationReminderSerializer
-    permission_classes = [CustomRemindersPermission]
+    # permission_classes = [CustomRemindersPermission]
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def get_queryset(self):
+        patient_id = self.request.user.id
+        return self.queryset.filter(patient=patient_id) # retorna os lembretes do usuario logado
     
-        validated_data = serializer.validated_data
+    def update(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-        reminder = MedicationReminder(
-            medication=validated_data['medication'],
-            patient=validated_data.get('patient'),
-            reminder_type=validated_data['reminder_type'],
-            frequency_per_day=validated_data.get('frequency_per_day', 1),
-            frequency_hours=validated_data.get('frequency_hours', 1),
-            remind_time=validated_data.get('remind_time'),
-            day=validated_data.get('day', timezone.now().date())
-        )
-
-        reminders = reminder.create_reminders()
-      
-        reminders_serializer = self.get_serializer(reminders, many=True)
-        
-        return Response(reminders_serializer.data, status=status.HTTP_201_CREATED)
-    
-
-    @action(detail=False, methods=['get'])
-    def due_reminders(self, request):
-        patient_id = request.query_params.get('patient_id')
-        if not patient_id:
-            return Response({'error': 'Patient ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        now = localtime(timezone.now())
-        time_range_end = now + timedelta(hours=6)
-
-        reminders = MedicationReminder.objects.filter(
-            patient=patient_id,
-            day=now.date(),
-            remind_time__gte=now.time(),
-            remind_time__lte= time_range_end.time(),
-            medication_taken=False
-        )
-
-
-        serializer = self.get_serializer(reminders, many=True)
-        return Response(serializer.data)
+    def partial_update(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 class AmountReminderViewSet(viewsets.ModelViewSet):
     queryset = AmountReminder.objects.all()
     serializer_class = AmountReminderSerializer
-    permission_classes = [CustomRemindersPermission]
+    # permission_classes = [CustomRemindersPermission]
 
 class TakeMedicationViewSet(viewsets.ViewSet):
     
-    permission_classes = [CustomRemindersPermission]
+    # permission_classes = [CustomRemindersPermission]
     
     def update(self, request, pk=None):
         try:
