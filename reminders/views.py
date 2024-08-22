@@ -2,18 +2,18 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from .models import AmountReminder, MedicationReminder
 from .serializers import AmountReminderSerializer, MedicationReminderSerializer
-from django.utils import timezone
+from django.utils.timezone import localdate, localtime, now
 from rest_framework.decorators import action
-from datetime import timedelta
-from django.utils.timezone import localtime
+from django.db.models import Q
 
-# class CustomRemindersPermission(permissions.BasePermission):
-#     def has_permission(self, request, view):
-#         return request.user and request.user.is_authenticated
+
+class CustomRemindersPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
 class MedicationReminderViewSet(viewsets.ModelViewSet):
     queryset = MedicationReminder.objects.all()
     serializer_class = MedicationReminderSerializer
-    # permission_classes = [CustomRemindersPermission]
+    permission_classes = [CustomRemindersPermission]
 
     def get_queryset(self):
         patient_id = self.request.user.id
@@ -24,15 +24,41 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    @action(detail=False, methods=['get'], url_path='upcoming')
+    def upcoming_reminder(self, request):
+        patient_id = self.request.user.id
+        current_date = localdate()
+        current_time = localtime(now()).time()
+
+        upcoming_reminder = self.get_queryset().filter(
+            patient=patient_id,
+            day__gte=current_date
+        ).filter(
+            Q(day=current_date, remind_time__gte=current_time) | Q(day__gt=current_date)
+        ).order_by('day', 'remind_time').first()
+        
+        print(current_date)
+
+        if upcoming_reminder:
+            serializer = self.get_serializer(upcoming_reminder)
+            return Response(serializer.data)
+        else:
+            return Response({"detail": "No upcoming reminders found."}, status=status.HTTP_404_NOT_FOUND)
+
 
 class AmountReminderViewSet(viewsets.ModelViewSet):
     queryset = AmountReminder.objects.all()
     serializer_class = AmountReminderSerializer
-    # permission_classes = [CustomRemindersPermission]
+    permission_classes = [CustomRemindersPermission]
+
+    def get_queryset(self):
+        patient_id = self.request.user.id
+        return self.queryset.filter(patient=patient_id) # retorna os lembretes do usuario logado
 
 class TakeMedicationViewSet(viewsets.ViewSet):
     
-    # permission_classes = [CustomRemindersPermission]
+    permission_classes = [CustomRemindersPermission]
     
     def update(self, request, pk=None):
         try:

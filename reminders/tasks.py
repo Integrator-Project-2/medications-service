@@ -1,11 +1,11 @@
 from celery import shared_task
 from datetime import timedelta
-from django.utils import timezone
+from django.utils.timezone import localdate
 from .models import MedicationReminder
 
 @shared_task
 def create_daily_reminders():
-    today = timezone.now().date()
+    today = localdate()
     tomorrow = today + timedelta(days=1)
 
     daily_reminders_today = MedicationReminder.objects.filter(reminder_type='daily reminder', day=today)

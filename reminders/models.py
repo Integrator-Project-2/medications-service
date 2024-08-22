@@ -1,7 +1,8 @@
+from datetime import timedelta, datetime
+from django.utils.timezone import localdate
 from django.db import models
 from medications.models import Medication
 from django.core.exceptions import ValidationError
-from datetime import datetime, timedelta
 
 class MedicationReminder(models.Model):
     REMINDER_TYPE = [
@@ -15,7 +16,6 @@ class MedicationReminder(models.Model):
     frequency_hours = models.IntegerField(default=0, null=True, blank=True)
     remind_time = models.TimeField(blank=True)
     day = models.DateField(blank=True, auto_now=True)
-    medication_taken = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.medication} - {self.reminder_type} on {self.day} at {self.remind_time}"
@@ -39,6 +39,44 @@ class MedicationReminder(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
+
+    def create_reminder_records(self):
+        today = localdate()
+        start_time = datetime.combine(today, self.remind_time)
+
+        if self.reminder_type == 'unique reminder':
+                MedicationReminderRecord.objects.get_or_create(
+                    reminder=self,
+                    date=self.day,
+                    remind_time=self.remind_time
+                )
+            
+        elif self.reminder_type == 'daily reminder':
+            if self.frequency_per_day == 1:
+                MedicationReminderRecord.objects.get_or_create(
+                    reminder=self,
+                    date=today,
+                    remind_time=self.remind_time
+                )
+            else:
+                for i in range(self.frequency_per_day):
+                    if self.frequency_hours is not None and self.frequency_hours > 0:
+                        remind_time = start_time + timedelta(hours=i * self.frequency_hours)
+                        remind_date = remind_time.date()
+                        
+                        MedicationReminderRecord.objects.get_or_create(
+                            reminder=self,
+                            date=remind_date,
+                            remind_time=remind_time.time()
+                        )
+class MedicationReminderRecord(models.Model):
+    reminder = models.ForeignKey(MedicationReminder, on_delete=models.CASCADE, related_name="reminder_records")
+    date = models.DateField()
+    remind_time = models.TimeField()
+    taken = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'Reminder for {self.reminder.medication} on {self.date} at {self.remind_time} - Taken: {self.taken}'
 
 class AmountReminder(models.Model):
     medication = models.OneToOneField(Medication, on_delete=models.DO_NOTHING, blank=True)
