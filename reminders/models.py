@@ -20,35 +20,25 @@ class MedicationReminder(models.Model):
     def __str__(self):
         return f"{self.medication} - {self.reminder_type} on {self.day} at {self.remind_time}"
 
-    def create_reminders(self):
-        reminders = []
-        
-        if self.reminder_type == 'unique reminder' or self.frequency_per_day == 1:
-            reminder = MedicationReminder.objects.create(
-                medication=self.medication,
-                patient=self.patient,
-                reminder_type=self.reminder_type,
-                remind_time=self.remind_time,
-                day=self.day
-            )
-            reminders.append(reminder)
+    def clean(self):
+        if self.reminder_type == 'unique reminder':
+            self.frequency_per_day = None
+            self.frequency_hours = None
+
         elif self.reminder_type == 'daily reminder':
 
-            start_datetime = datetime.combine(self.day, self.remind_time)
-            
-            for i in range(self.frequency_per_day):
-                remind_datetime = start_datetime + timedelta(hours=i * self.frequency_hours)
-                reminder = MedicationReminder.objects.create(
-                    medication=self.medication,
-                    patient=self.patient,
-                    reminder_type=self.reminder_type,
-                    remind_time=remind_datetime.time(),
-                    day=self.day
-                )
-                reminders.append(reminder)
+            if self.frequency_per_day <= 0:
+                raise ValidationError({'frequency_per_day': 'Frequency per day must be at least 1 for daily reminders.'})
+             
+            if self.frequency_per_day > 1 and (self.frequency_hours is None or self.frequency_hours <= 0):
+                raise ValidationError({'frequency_hours' : 'For reminders more than once per day, frequency hours must be greater than 0'})
     
-        return reminders
-
+            if self.frequency_per_day == 1:
+                self.frequency_hours = None
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 class AmountReminder(models.Model):
     medication = models.OneToOneField(Medication, on_delete=models.DO_NOTHING, blank=True)
