@@ -62,6 +62,26 @@ class MedicationReminderRecordViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = MedicationReminderRecordSerializer
     permission_classes = [CustomRemindersPermission]
 
+    @action(detail=False, methods=['get'], url_path='upcoming')
+    def upcoming_reminders(self, request):
+        patient_id = self.request.user.id
+        current_date = localdate()
+        current_time = localtime(now()).time()
+
+        medication_reminder_ids = MedicationReminder.objects.filter(patient=patient_id).values_list('id', flat=True)
+
+        # filtra lembretes que ainda não foram tomados
+        upcoming_reminders = self.queryset.filter(
+            reminder__in=medication_reminder_ids,
+            taken=False,
+            date__gte=current_date
+        ).filter(
+            Q(date=current_date, remind_time__gte=current_time) | Q(date__gt=current_date)
+        ).order_by('date', 'remind_time')
+
+        serializer = self.get_serializer(upcoming_reminders, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['post'], url_path='take-medication')
     def take_medication(self, request, pk=None):
         try:
