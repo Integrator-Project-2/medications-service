@@ -10,7 +10,7 @@ class CustomMedicationPermission(permissions.BasePermission):
 class MedicationViewSet(viewsets.ModelViewSet):
     queryset = Medication.objects.all()
     serializer_class = MedicationSerializer
-    permission_classes = [CustomMedicationPermission]
+    # permission_classes = [CustomMedicationPermission]
 
     @action(detail=False, methods=['get'])
     def search(self, request):

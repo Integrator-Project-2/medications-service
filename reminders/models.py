@@ -82,6 +82,7 @@ class AmountReminder(models.Model):
     medication = models.OneToOneField(Medication, on_delete=models.DO_NOTHING, blank=True)
     amount = models.IntegerField(blank=True)
     reminder_quantity = models.IntegerField(default=5, blank=True)
+    quantity_taken = models.IntegerField(default=1)
     low_stock = models.BooleanField(default=False, blank=True)
 
     def clean(self):

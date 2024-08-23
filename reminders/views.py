@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
-from .models import AmountReminder, MedicationReminder
-from .serializers import AmountReminderSerializer, MedicationReminderSerializer
+from .models import AmountReminder, MedicationReminder, MedicationReminderRecord
+from .serializers import AmountReminderSerializer, MedicationReminderRecordSerializer, MedicationReminderSerializer
 from django.utils.timezone import localdate, localtime, now
 from rest_framework.decorators import action
 from django.db.models import Q
@@ -54,33 +54,51 @@ class AmountReminderViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         patient_id = self.request.user.id
-        return self.queryset.filter(patient=patient_id) # retorna os lembretes do usuario logado
+        medication_reminders = MedicationReminder.objects.filter(patient=patient_id).values_list('medication', flat=True)
+        return AmountReminder.objects.filter(medication__in=medication_reminders)
 
-class TakeMedicationViewSet(viewsets.ViewSet):
-    
+class MedicationReminderRecordViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = MedicationReminderRecord.objects.all()
+    serializer_class = MedicationReminderRecordSerializer
     permission_classes = [CustomRemindersPermission]
-    
-    def update(self, request, pk=None):
-        try:
-            medication_reminder = MedicationReminder.objects.get(pk=pk)
-        except MedicationReminder.DoesNotExist:
-            return Response({'error': 'Medication Reminder not found.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        if medication_reminder.medication_taken:
-            return Response({'message': 'Medication already marked as taken.'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        medication_reminder.medication_taken = True
-        medication_reminder.save()
-        
-        try:
-            amount_reminder = AmountReminder.objects.get(medication=medication_reminder.medication)
-        except AmountReminder.DoesNotExist:
-            return Response({'error': 'Amount Reminder not found for this medication.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        amount_reminder.amount -= 1
-        amount_reminder.save()
 
-        low_stock = amount_reminder.low_stock
-        
-        return Response({'message': 'Medication marked as taken and amount decremented successfully.', 'low_stock': low_stock}, status=status.HTTP_200_OK)
-        
+    @action(detail=True, methods=['post'], url_path='take-medication')
+    def take_medication(self, request, pk=None):
+        try:
+            reminder_record = self.get_object()
+
+            if reminder_record.taken:
+                return Response(
+                    {'error': 'This medication reminder has already been marked as taken.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            try:
+                amount_reminder = AmountReminder.objects.get(medication=reminder_record.reminder.medication)
+                if amount_reminder.amount > 0:
+                    amount_reminder.amount -= amount_reminder.quantity_taken
+                    amount_reminder.save()
+                
+                # se o estoque estiver vazio ou negativo após o decremento, retorna uma mensagem de aviso
+                if amount_reminder.amount <= 0:
+                    warning_message = 'The medication stock is empty. Please refill the stock.'
+                    reminder_record.taken = True
+                    reminder_record.save()
+                    serializer = self.get_serializer(reminder_record)
+                    return Response(
+                        {'reminder': serializer.data, 'warning': warning_message},
+                        status=status.HTTP_200_OK
+                    )
+
+            except AmountReminder.DoesNotExist:
+                # se não existir AmountReminder apenas marca o lembrete como "tomado"
+                pass
+
+            reminder_record.taken = True
+            reminder_record.save()
+
+            serializer = self.get_serializer(reminder_record)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except MedicationReminderRecord.DoesNotExist:
+            return Response({'error': 'Medication Reminder Record not found'}, status=status.HTTP_404_NOT_FOUND)
