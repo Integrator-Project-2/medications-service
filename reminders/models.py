@@ -15,7 +15,7 @@ class MedicationReminder(models.Model):
     frequency_per_day = models.IntegerField(default=1, blank=True, null=True)
     frequency_hours = models.IntegerField(default=0, null=True, blank=True)
     remind_time = models.TimeField(blank=True)
-    day = models.DateField(blank=True, auto_now=True)
+    day = models.DateField(blank=True)
 
     def __str__(self):
         return f"{self.medication} - {self.reminder_type} on {self.day} at {self.remind_time}"
