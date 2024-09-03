@@ -13,7 +13,6 @@ class CustomRemindersPermission(permissions.BasePermission):
 class MedicationReminderViewSet(viewsets.ModelViewSet):
     queryset = MedicationReminder.objects.all()
     serializer_class = MedicationReminderSerializer
-    permission_classes = [CustomRemindersPermission]
 
     def get_queryset(self):
         patient_id = self.request.user.id
@@ -50,7 +49,6 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
 class AmountReminderViewSet(viewsets.ModelViewSet):
     queryset = AmountReminder.objects.all()
     serializer_class = AmountReminderSerializer
-    permission_classes = [CustomRemindersPermission]
 
     def get_queryset(self):
         patient_id = self.request.user.id
@@ -60,7 +58,6 @@ class AmountReminderViewSet(viewsets.ModelViewSet):
 class MedicationReminderRecordViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = MedicationReminderRecord.objects.all()
     serializer_class = MedicationReminderRecordSerializer
-    permission_classes = [CustomRemindersPermission]
 
     @action(detail=False, methods=['get'], url_path='upcoming')
     def upcoming_reminders(self, request):
