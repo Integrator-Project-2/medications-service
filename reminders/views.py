@@ -49,11 +49,6 @@ class AmountReminderViewSet(viewsets.ModelViewSet):
     queryset = AmountReminder.objects.all()
     serializer_class = serializers.AmountReminderSerializer
 
-    def get_queryset(self):
-        patient_id = self.request.query_params.get('patient_id', self.request.user.id)
-        medication_reminders = MedicationReminder.objects.filter(patient=patient_id).values_list('medication', flat=True)
-        return AmountReminder.objects.filter(medication__in=medication_reminders)
-
 class MedicationReminderRecordViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = MedicationReminderRecord.objects.all()
     serializer_class = serializers.MedicationReminderRecordSerializer

@@ -19,7 +19,7 @@ class MedicationReminderDetailSerializer(serializers.ModelSerializer):
 class AmountReminderSerializer(serializers.ModelSerializer):
     class Meta:
         model = AmountReminder
-        fields = ['id', 'medication', 'amount', 'reminder_quantity', 'low_stock', 'quantity_taken']
+        fields = ['id', 'medication', 'amount', 'reminder_quantity', 'quantity_taken']
 
 class MedicationReminderRecordSerializer(serializers.ModelSerializer):
     class Meta:
