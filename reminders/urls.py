@@ -5,10 +5,12 @@ from . import views
 router = DefaultRouter()
 router.register(r'medication-reminder', views.MedicationReminderViewSet)
 router.register(r'amount-reminder', views.AmountReminderViewSet)
+router.register(r'medication-reminder-record', views.MedicationReminderRecordViewSet)
+
 
 
 urlpatterns = [
-    path('take_medication/<int:pk>/', views.TakeMedicationViewSet.as_view({'put': 'update'}), name='take_medication'),
+
 ]
 
 urlpatterns += router.urls
