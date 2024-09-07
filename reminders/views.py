@@ -17,7 +17,7 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         patient_id = self.request.query_params.get('patient_id', self.request.user.id)
-        return self.queryset.filter(patient=patient_id).order_by('day', 'remind_time')
+        return self.queryset.filter(patient=patient_id).order_by('-day', '-remind_time')
     
     def update(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
