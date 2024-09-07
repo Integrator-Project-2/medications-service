@@ -7,9 +7,6 @@ from rest_framework.decorators import action
 from django.db.models import Q
 
 
-class CustomRemindersPermission(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
 class MedicationReminderViewSet(viewsets.ModelViewSet):
     queryset = MedicationReminder.objects.all()
  
@@ -20,7 +17,7 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         patient_id = self.request.query_params.get('patient_id', self.request.user.id)
-        return self.queryset.filter(patient=patient_id) # retorna os lembretes do usuario logado
+        return self.queryset.filter(patient=patient_id).order_by('day', 'remind_time')
     
     def update(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
