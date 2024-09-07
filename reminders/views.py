@@ -1,18 +1,23 @@
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
+from . import serializers
 from .models import AmountReminder, MedicationReminder, MedicationReminderRecord
-from .serializers import AmountReminderSerializer, MedicationReminderRecordSerializer, MedicationReminderSerializer
 from django.utils.timezone import localdate, localtime, now
 from rest_framework.decorators import action
 from django.db.models import Q
 
+
 class MedicationReminderViewSet(viewsets.ModelViewSet):
     queryset = MedicationReminder.objects.all()
-    serializer_class = MedicationReminderSerializer
+ 
+    def get_serializer_class(self):
+        if self.action == 'retrieve' or self.action == 'list' :
+            return serializers.MedicationReminderDetailSerializer  # Use DetailSerializer for list
+        return serializers.MedicationReminderSerializer
 
     def get_queryset(self):
-        patient_id = self.request.user.id
-        return self.queryset.filter(patient=patient_id) # retorna os lembretes do usuario logado
+        patient_id = self.request.query_params.get('patient_id', self.request.user.id)
+        return self.queryset.filter(patient=patient_id).order_by('-day', '-remind_time')
     
     def update(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -22,7 +27,7 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'], url_path='upcoming')
     def upcoming_reminder(self, request):
-        patient_id = self.request.user.id
+        patient_id = self.request.query_params.get('patient_id', self.request.user.id)
         current_date = localdate()
         current_time = localtime(now()).time()
 
@@ -32,8 +37,6 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
         ).filter(
             Q(day=current_date, remind_time__gte=current_time) | Q(day__gt=current_date)
         ).order_by('day', 'remind_time').first()
-        
-        print(current_date)
 
         if upcoming_reminder:
             serializer = self.get_serializer(upcoming_reminder)
@@ -44,20 +47,15 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
 
 class AmountReminderViewSet(viewsets.ModelViewSet):
     queryset = AmountReminder.objects.all()
-    serializer_class = AmountReminderSerializer
-
-    def get_queryset(self):
-        patient_id = self.request.user.id
-        medication_reminders = MedicationReminder.objects.filter(patient=patient_id).values_list('medication', flat=True)
-        return AmountReminder.objects.filter(medication__in=medication_reminders)
+    serializer_class = serializers.AmountReminderSerializer
 
 class MedicationReminderRecordViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = MedicationReminderRecord.objects.all()
-    serializer_class = MedicationReminderRecordSerializer
+    serializer_class = serializers.MedicationReminderRecordSerializer
 
     @action(detail=False, methods=['get'], url_path='upcoming')
     def upcoming_reminders(self, request):
-        patient_id = self.request.user.id
+        patient_id = self.request.query_params.get('patient_id', self.request.user.id)
         current_date = localdate()
         current_time = localtime(now()).time()
 
