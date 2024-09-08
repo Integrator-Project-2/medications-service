@@ -85,18 +85,17 @@ class MedicationReminderRecordViewSet(viewsets.ReadOnlyModelViewSet):
 
         medication_reminder_ids = MedicationReminder.objects.filter(patient=patient_id).values_list('id', flat=True)
 
-        # filtra lembretes que ainda não foram tomados
         upcoming_reminder = self.queryset.filter(
             reminder__in=medication_reminder_ids,
             taken=False,
-           
         ).order_by('date', 'remind_time').first()
 
         if upcoming_reminder:
-            serializer = self.get_serializer(upcoming_reminder) 
-         
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
+            serializer = self.get_serializer(upcoming_reminder)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response({}, status=status.HTTP_200_OK)
+    
     @action(detail=True, methods=['post'], url_path='take-medication')
     def take_medication(self, request, pk=None):
         try:
