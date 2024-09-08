@@ -88,12 +88,13 @@ class AmountReminder(models.Model):
     def clean(self):
         if self.medication.pharmaceutical_form not in ['tablet', 'capsule', 'injectable']:
             raise ValidationError({'medication': 'Amount reminders can only be created for tablet, capsule, or injectable medications.'})
-        if self.amount <= 0:
-            raise ValidationError({'amount': 'Medication amount must be greater than zero.'})
         if self.reminder_quantity < 0:
             raise ValidationError({'reminder_quantity': 'Medication reminder quantity must be greater than or equal to zero.'})
 
     def save(self, *args, **kwargs):
+        if self.amount < 0:
+            self.amount = 0
+
         if self.amount <= self.reminder_quantity:
             self.low_stock = True
         else:

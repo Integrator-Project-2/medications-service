@@ -5,6 +5,7 @@ from medications.serializers import MedicationSerializer
 from .models import AmountReminder, MedicationReminder, MedicationReminderRecord
 
 class MedicationReminderSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = MedicationReminder
         fields = ['id', 'medication', 'patient', 'reminder_type',  'frequency_per_day', 'frequency_hours', 'remind_time', 'day']
@@ -22,6 +23,7 @@ class AmountReminderSerializer(serializers.ModelSerializer):
         fields = ['id', 'medication', 'amount', 'reminder_quantity', 'quantity_taken']
 
 class MedicationReminderRecordSerializer(serializers.ModelSerializer):
+    reminder = MedicationReminderDetailSerializer()
     class Meta:
         model = MedicationReminderRecord
         fields = ['id', 'reminder', 'date', 'remind_time', 'taken']

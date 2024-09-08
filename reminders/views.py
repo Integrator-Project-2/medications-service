@@ -12,18 +12,28 @@ class MedicationReminderViewSet(viewsets.ModelViewSet):
  
     def get_serializer_class(self):
         if self.action == 'retrieve' or self.action == 'list' :
-            return serializers.MedicationReminderDetailSerializer  # Use DetailSerializer for list
+            return serializers.MedicationReminderDetailSerializer
         return serializers.MedicationReminderSerializer
 
     def get_queryset(self):
-        patient_id = self.request.query_params.get('patient_id', self.request.user.id)
-        return self.queryset.filter(patient=patient_id).order_by('-day', '-remind_time')
+        patient_id = self.request.query_params.get('patient_id')
+        if patient_id:
+            return self.queryset.filter(patient=patient_id).order_by('-day', '-remind_time')
+        else:
+             return self.queryset.order_by('-day', '-remind_time')
     
     def update(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def partial_update(self, request, *args, **kwargs):
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def destroy(self, request, *args, **kwargs):
+        reminder = self.get_object()
+        print(f"Deleting reminder: {reminder}")
+        reminder.delete()
+        return Response({"detail": "Medication reminder deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
     
     @action(detail=False, methods=['get'], url_path='upcoming')
     def upcoming_reminder(self, request):
@@ -53,24 +63,38 @@ class MedicationReminderRecordViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = MedicationReminderRecord.objects.all()
     serializer_class = serializers.MedicationReminderRecordSerializer
 
+    def get_queryset(self):
+        patient_id = self.request.query_params.get('patient_id', None)
+        reminder_id = self.request.query_params.get('reminder_id', None)
+
+        queryset = MedicationReminderRecord.objects.all()
+
+        if patient_id:
+            queryset = queryset.filter(reminder__patient=patient_id)
+        elif reminder_id:
+            queryset = queryset.filter(reminder=reminder_id)
+
+        
+        queryset = queryset.order_by('-date', '-remind_time')
+
+        return queryset
+            
     @action(detail=False, methods=['get'], url_path='upcoming')
     def upcoming_reminders(self, request):
-        patient_id = self.request.query_params.get('patient_id', self.request.user.id)
-        current_date = localdate()
-        current_time = localtime(now()).time()
+        patient_id = self.request.query_params.get('patient_id', None)
 
         medication_reminder_ids = MedicationReminder.objects.filter(patient=patient_id).values_list('id', flat=True)
 
         # filtra lembretes que ainda não foram tomados
-        upcoming_reminders = self.queryset.filter(
+        upcoming_reminder = self.queryset.filter(
             reminder__in=medication_reminder_ids,
             taken=False,
-            date__gte=current_date
-        ).filter(
-            Q(date=current_date, remind_time__gte=current_time) | Q(date__gt=current_date)
-        ).order_by('date', 'remind_time')
+           
+        ).order_by('date', 'remind_time').first()
 
-        serializer = self.get_serializer(upcoming_reminders, many=True)
+        if upcoming_reminder:
+            serializer = self.get_serializer(upcoming_reminder) 
+         
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='take-medication')
@@ -88,10 +112,14 @@ class MedicationReminderRecordViewSet(viewsets.ReadOnlyModelViewSet):
                 amount_reminder = AmountReminder.objects.get(medication=reminder_record.reminder.medication)
                 if amount_reminder.amount > 0:
                     amount_reminder.amount -= amount_reminder.quantity_taken
+
+                    if amount_reminder.amount < 0:
+                        amount_reminder.amount = 0
+
                     amount_reminder.save()
                 
                 # se o estoque estiver vazio ou negativo após o decremento, retorna uma mensagem de aviso
-                if amount_reminder.amount <= 0:
+                if amount_reminder.amount == 0:
                     warning_message = 'The medication stock is empty. Please refill the stock.'
                     reminder_record.taken = True
                     reminder_record.save()
