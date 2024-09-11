@@ -1,8 +1,7 @@
-from datetime import timedelta, datetime
-from django.utils.timezone import localdate
 from django.db import models
 from medications.models import Medication
 from django.core.exceptions import ValidationError
+from reminders.factories import FACTORY_MAP
 
 class MedicationReminder(models.Model):
     REMINDER_TYPE = [
@@ -41,34 +40,12 @@ class MedicationReminder(models.Model):
         super().save(*args, **kwargs)
 
     def create_reminder_records(self):
-        today = localdate()
-        start_time = datetime.combine(today, self.remind_time)
-
-        if self.reminder_type == 'unique reminder':
-                MedicationReminderRecord.objects.get_or_create(
-                    reminder=self,
-                    date=self.day,
-                    remind_time=self.remind_time
-                )
-            
-        elif self.reminder_type == 'daily reminder':
-            if self.frequency_per_day == 1:
-                MedicationReminderRecord.objects.get_or_create(
-                    reminder=self,
-                    date=today,
-                    remind_time=self.remind_time
-                )
-            else:
-                for i in range(self.frequency_per_day):
-                    if self.frequency_hours is not None and self.frequency_hours > 0:
-                        remind_time = start_time + timedelta(hours=i * self.frequency_hours)
-                        remind_date = remind_time.date()
-                        
-                        MedicationReminderRecord.objects.get_or_create(
-                            reminder=self,
-                            date=remind_date,
-                            remind_time=remind_time.time()
-                        )
+        factory = FACTORY_MAP.get(self.reminder_type)
+        if factory:
+            factory.create_reminder(self)
+        else:
+            raise ValueError(f"Unknown reminder type: {self.reminder_type}")
+        
 class MedicationReminderRecord(models.Model):
     reminder = models.ForeignKey(MedicationReminder, on_delete=models.CASCADE, related_name="reminder_records")
     date = models.DateField()
